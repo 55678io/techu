@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="../Bakwaas.jpeg">
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
-  html, body { margin: 0; height: 100%; background: #ffffff; color: #111; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #ffffff; color: #111; overflow: hidden; touch-action: manipulation; -webkit-text-size-adjust: 100%; }
   .screen { position: fixed; inset: 0; display: none; flex-direction: column; background: #fff; }
   .screen.active { display: flex; }
   .fade-in { animation: fade .45s ease; }
@@ -97,6 +97,19 @@
 (function () {
   "use strict";
 
+  // ---- ringtone + anti-zoom ----
+  var _actx=null,_ringTimer=null;
+  function _ensureCtx(){ try{ if(!_actx){_actx=new (window.AudioContext||window.webkitAudioContext)();} if(_actx&&_actx.state==="suspended"){_actx.resume();} }catch(e){} }
+  document.addEventListener("touchend",_ensureCtx,false);
+  document.addEventListener("click",_ensureCtx,false);
+  function _beep(){ if(!_actx)return; var t=_actx.currentTime; [480,620].forEach(function(f){ var o=_actx.createOscillator(),g=_actx.createGain(); o.type="sine"; o.frequency.value=f; o.connect(g); g.connect(_actx.destination); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.22,t+0.05); g.gain.setValueAtTime(0.22,t+0.9); g.gain.exponentialRampToValueAtTime(0.0001,t+1.0); o.start(t); o.stop(t+1.0); }); }
+  function startRing(){ _ensureCtx(); if(_ringTimer)return; _beep(); _ringTimer=setInterval(_beep,2000); try{ if(navigator.vibrate) navigator.vibrate([500,300,500,300,500]); }catch(e){} }
+  function stopRing(){ if(_ringTimer){clearInterval(_ringTimer);_ringTimer=null;} try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){} }
+  document.addEventListener("gesturestart",function(e){e.preventDefault();},false);
+  document.addEventListener("gesturechange",function(e){e.preventDefault();},false);
+  var _lt=0; document.addEventListener("touchend",function(e){ var n=Date.now(); if(n-_lt<=350){e.preventDefault();} _lt=n; },{passive:false});
+
+
   var ICON = {
     mic: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 0 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg>',
     micOff: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 0 0 2 0v-3.08A7 7 0 0 0 19 11z"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
@@ -133,6 +146,7 @@
     openCall(peerLabel, wantVideo, true);
     $("callStat").textContent = wantVideo ? "Incoming video call…" : "Incoming audio call…";
     $("btnAnswer").classList.remove("hidden");
+      startRing();
   });
 
   async function getMedia(video) { return navigator.mediaDevices.getUserMedia({ audio: true, video: video ? { facingMode: "user" } : false }); }
@@ -174,6 +188,7 @@
     $("localVideo").srcObject = localStream;
     $("localVideo").classList.toggle("hidden", !wantVideo);
     $("callLogo").classList.toggle("hidden", wantVideo);
+    stopRing();
     incomingCall.answer(localStream);
     wire(incomingCall);
     $("btnAnswer").classList.add("hidden");
@@ -182,6 +197,7 @@
   }
 
   function endUI() {
+    stopRing();
     if (currentCall) { try { currentCall.close(); } catch (e) {} currentCall = null; }
     if (localStream) { localStream.getTracks().forEach(function (t){ t.stop(); }); localStream = null; }
     $("remoteVideo").srcObject = null;
