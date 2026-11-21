@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Techu Admin</title>
+<link rel="icon" href="../Bakwaas.jpeg">
+<link rel="apple-touch-icon" href="../Bakwaas.jpeg">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  html, body { margin: 0; height: 100%; background: #ffffff; color: #111; overflow: hidden; }
+  .screen { position: fixed; inset: 0; display: none; flex-direction: column; background: #fff; }
+  .screen.active { display: flex; }
+  .fade-in { animation: fade .45s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+  #dash { background: #fff; }
+  .top { padding: calc(16px + env(safe-area-inset-top)) 20px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f0f0f3; }
+  .top img { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; }
+  .top .t { font-weight: 700; font-size: 18px; }
+  .top .who { margin-left: auto; color: #8a8a8e; font-size: 13px; }
+  .list { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+  .card { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #ececf0; border-radius: 18px; background: #fff; box-shadow: 0 2px 10px #0000000a; }
+  .card img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: #eee; }
+  .card .name { font-weight: 700; font-size: 17px; }
+  .card .st { color: #8a8a8e; font-size: 13px; margin-top: 2px; }
+  .card .btns { margin-left: auto; display: flex; gap: 10px; }
+  .cbtn { width: 46px; height: 46px; border-radius: 50%; border: 0; font-size: 20px; cursor: pointer; color: #fff; }
+  .cbtn.aud { background: #34c759; }
+  .cbtn.vid { background: #0a84ff; }
+  .cbtn:active { transform: scale(.94); }
+
+  #call { background: #0b0b0d; color: #fff; }
+  #remoteVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #0b0b0d; }
+  .callLogo { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
+  .callLogo img { width: 120px; height: 120px; border-radius: 30px; object-fit: cover; }
+  #localVideo { position: absolute; top: calc(14px + env(safe-area-inset-top)); right: 14px; width: 104px; height: 150px; object-fit: cover; border-radius: 14px; border: 2px solid #ffffff44; background: #222; z-index: 4; }
+  .cHead { position: absolute; top: calc(20px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center; z-index: 3; }
+  .cHead .n { font-size: 22px; font-weight: 700; }
+  .cHead .s { font-size: 14px; color: #c7c7cc; margin-top: 4px; }
+  .bar { position: absolute; bottom: 0; left: 0; right: 0; z-index: 5; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; padding: 22px 18px calc(26px + env(safe-area-inset-bottom)); }
+  .rb { width: 62px; height: 62px; border-radius: 50%; border: 0; font-size: 24px; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .rb.g { background: #2c2c2e; }
+  .rb.active { background: #fff; color: #111; }
+  .rb.answer { background: #34c759; }
+  .rb.end { background: #ff3b30; }
+  .rb:active { transform: scale(.94); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="screen active" id="dash">
+  <div class="top">
+    <img src="../Bakwaas.jpeg" onerror="this.style.display='none'">
+    <div class="t">Techu Admin</div>
+    <div class="who">Admin</div>
+  </div>
+  <div class="list" id="profiles">
+    <div class="card">
+      <img src="../Bakwaas.jpeg" onerror="this.style.display='none'">
+      <div><div class="name">556221</div><div class="st">User</div></div>
+      <div class="btns">
+        <button class="cbtn aud" data-id="556221" data-v="0">🎙️</button>
+        <button class="cbtn vid" data-id="556221" data-v="1">📹</button>
+      </div>
+    </div>
+    <div class="card">
+      <img src="../Bakwaas.jpeg" onerror="this.style.display='none'">
+      <div><div class="name">997204</div><div class="st">User</div></div>
+      <div class="btns">
+        <button class="cbtn aud" data-id="997204" data-v="0">🎙️</button>
+        <button class="cbtn vid" data-id="997204" data-v="1">📹</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="call">
+  <video id="remoteVideo" autoplay playsinline></video>
+  <div class="callLogo" id="callLogo"><img src="../Bakwaas.jpeg" onerror="this.style.display='none'"></div>
+  <video id="localVideo" autoplay playsinline muted class="hidden"></video>
+  <div class="cHead">
+    <div class="n" id="peerName">User</div>
+    <div class="s" id="callStat">Calling…</div>
+  </div>
+  <div class="bar">
+    <button class="rb g active" id="btnMute"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 0 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg></button>
+    <button class="rb g active" id="btnSpk"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6a9 9 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="rb answer hidden" id="btnAnswer"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .58 3.6 1 1 0 0 1-.24 1l-2.24 2.2z"/></svg></button>
+    <button class="rb end" id="btnEnd"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" style="transform:rotate(135deg)"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .58 3.6 1 1 0 0 1-.24 1l-2.24 2.2z"/></svg></button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ICON = {
+    mic: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 0 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg>',
+    micOff: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 0 0 2 0v-3.08A7 7 0 0 0 19 11z"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    spk: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6a9 9 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    spkOff: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M17 9l4 6M21 9l-4 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    answer: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .58 3.6 1 1 0 0 1-.24 1l-2.24 2.2z"/></svg>',
+    hangup: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" style="transform:rotate(135deg)"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .58 3.6 1 1 0 0 1-.24 1l-2.24 2.2z"/></svg>'
+  };
+
+
+  var PREFIX = "techu2v1-";
+  var ADMIN_ID = PREFIX + "admin";
+  function userId(id) { return PREFIX + "user-" + id; }
+
+  var ICE = { iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+  ]};
+
+  var $ = function (id) { return document.getElementById(id); };
+  function show(id) { ["dash","call"].forEach(function (s){ $(s).classList.toggle("active", s===id); }); var a=$(id); a.classList.remove("fade-in"); void a.offsetWidth; a.classList.add("fade-in"); }
+
+  var peer = null, localStream = null, currentCall = null, incomingCall = null, wantVideo = false, peerLabel = "User";
+
+  peer = new Peer(ADMIN_ID, { config: ICE, debug: 1 });
+  peer.on("error", function (e) { console.log("peer error", e); });
+  peer.on("call", function (c) {
+    incomingCall = c;
+    wantVideo = !!(c.metadata && c.metadata.video);
+    peerLabel = (c.metadata && c.metadata.from) ? c.metadata.from : "User";
+    openCall(peerLabel, wantVideo, true);
+    $("callStat").textContent = wantVideo ? "Incoming video call…" : "Incoming audio call…";
+    $("btnAnswer").classList.remove("hidden");
+  });
+
+  async function getMedia(video) { return navigator.mediaDevices.getUserMedia({ audio: true, video: video ? { facingMode: "user" } : false }); }
+
+  function openCall(name, video, incoming) {
+    $("peerName").textContent = name;
+    show("call");
+    $("localVideo").classList.toggle("hidden", !video);
+    $("callLogo").classList.toggle("hidden", video);
+    if (!incoming) $("btnAnswer").classList.add("hidden");
+  }
+
+  function wire(call) {
+    currentCall = call;
+    call.on("stream", function (remote) {
+      $("remoteVideo").srcObject = remote;
+      $("callLogo").classList.toggle("hidden", remote.getVideoTracks().length > 0);
+      $("callStat").textContent = "Connected";
+    });
+    call.on("close", endUI);
+    call.on("error", function () { $("callStat").textContent = "Call error"; });
+  }
+
+  async function startCall(id, video) {
+    wantVideo = video; peerLabel = id;
+    try { localStream = await getMedia(video); }
+    catch (e) { alert("Camera/mic allow karo."); return; }
+    $("localVideo").srcObject = localStream;
+    openCall(id, video, false);
+    $("callStat").textContent = "Calling…";
+    var call = peer.call(userId(id), localStream, { metadata: { video: video, from: "Admin" } });
+    wire(call);
+  }
+
+  async function answer() {
+    if (!incomingCall) return;
+    try { localStream = await getMedia(wantVideo); }
+    catch (e) { alert("Camera/mic allow karo."); return; }
+    $("localVideo").srcObject = localStream;
+    $("localVideo").classList.toggle("hidden", !wantVideo);
+    $("callLogo").classList.toggle("hidden", wantVideo);
+    incomingCall.answer(localStream);
+    wire(incomingCall);
+    $("btnAnswer").classList.add("hidden");
+    $("callStat").textContent = "Connected";
+    incomingCall = null;
+  }
+
+  function endUI() {
+    if (currentCall) { try { currentCall.close(); } catch (e) {} currentCall = null; }
+    if (localStream) { localStream.getTracks().forEach(function (t){ t.stop(); }); localStream = null; }
+    $("remoteVideo").srcObject = null;
+    show("dash");
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll(".cbtn"), function (b) {
+    b.onclick = function () { startCall(b.getAttribute("data-id"), b.getAttribute("data-v") === "1"); };
+  });
+
+  var micOn = true, spkOn = true;
+  $("btnMute").onclick = function () {
+    if (!localStream) return;
+    micOn = !micOn;
+    localStream.getAudioTracks().forEach(function (t){ t.enabled = micOn; });
+    this.className = "rb g " + (micOn ? "active" : "");
+    this.innerHTML = micOn ? ICON.mic : ICON.micOff;
+  };
+  $("btnSpk").onclick = function () {
+    spkOn = !spkOn;
+    $("remoteVideo").volume = spkOn ? 1 : 0.25;
+    this.className = "rb g " + (spkOn ? "active" : "");
+    this.innerHTML = spkOn ? ICON.spk : ICON.spkOff;
+  };
+  $("btnAnswer").onclick = answer;
+  $("btnEnd").onclick = endUI;
+
+})();
+</script>
+</body>
+</html>
