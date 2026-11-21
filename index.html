@@ -4,78 +4,116 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Techu</title>
+<link rel="icon" href="Bakwaas.jpeg">
+<link rel="apple-touch-icon" href="Bakwaas.jpeg">
 <style>
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; background: #0b141a; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; color: #e9edef; overflow: hidden; }
-  #app { height: 100%; display: flex; flex-direction: column; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  html, body { margin: 0; height: 100%; background: #ffffff; color: #111; overflow: hidden; }
+  .screen { position: fixed; inset: 0; display: none; flex-direction: column; background: #fff; }
+  .screen.active { display: flex; }
+  .fade-in { animation: fade .45s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
-  /* ---- Start screen ---- */
-  .start { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
-  .logo { font-size: 44px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; color: #25d366; }
-  .tag { color: #8696a0; margin-bottom: 36px; font-size: 15px; }
-  .field { width: 100%; max-width: 340px; }
-  .field input {
-    width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #2a3942;
-    background: #202c33; color: #e9edef; font-size: 18px; text-align: center; letter-spacing: 1px;
+  /* Login */
+  #login { align-items: center; justify-content: center; padding: 28px; }
+  .logo-img { width: 120px; height: 120px; border-radius: 28px; object-fit: cover; margin-bottom: 10px; box-shadow: 0 8px 30px #0001; }
+  .brand { font-size: 30px; font-weight: 800; color: #111; margin-bottom: 4px; }
+  .sub { color: #8a8a8e; font-size: 14px; margin-bottom: 30px; }
+  .form { width: 100%; max-width: 330px; }
+  .form input {
+    width: 100%; padding: 15px 16px; margin-bottom: 12px; border-radius: 14px;
+    border: 1px solid #e3e3e8; background: #f6f6f8; font-size: 16px; color: #111;
   }
-  .btns { width: 100%; max-width: 340px; margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
-  .btn { padding: 16px; border: 0; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; }
-  .btn-primary { background: #25d366; color: #0b141a; }
-  .btn-ghost { background: #202c33; color: #e9edef; border: 1px solid #2a3942; }
-  .hint { color: #8696a0; font-size: 13px; margin-top: 22px; max-width: 320px; line-height: 1.5; }
-  .status { color: #f0b429; font-size: 14px; margin-top: 16px; min-height: 20px; }
+  .form input:focus { outline: none; border-color: #0a84ff; background: #fff; }
+  .primary { width: 100%; padding: 15px; border: 0; border-radius: 14px; background: #0a84ff; color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; }
+  .primary:active { transform: scale(.98); }
+  .err { color: #ff3b30; font-size: 13px; min-height: 18px; margin: 4px 2px 10px; text-align: center; }
 
-  /* ---- Call screen ---- */
-  .call { flex: 1; position: relative; display: none; background: #000; }
-  #remoteVideo { width: 100%; height: 100%; object-fit: cover; background: #000; }
-  #localVideo {
-    position: absolute; top: 16px; right: 16px; width: 110px; height: 160px;
-    object-fit: cover; border-radius: 12px; border: 2px solid #ffffff33; background: #111; z-index: 5;
-  }
-  .waiting { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #8696a0; font-size: 16px; z-index: 2; text-align: center; padding: 20px; }
-  .bar {
-    position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
-    display: flex; justify-content: center; gap: 18px; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-    background: linear-gradient(to top, #000a, transparent);
-  }
-  .round { width: 58px; height: 58px; border-radius: 50%; border: 0; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; }
-  .round.on { background: #202c33; }
-  .round.off { background: #f1f1f1; color: #111; }
-  .round.end { background: #ea0038; }
-  .codeTag { position: absolute; top: 16px; left: 16px; z-index: 5; background: #000000aa; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #e9edef; }
+  /* Dashboard */
+  #dash { background: #fff; }
+  .top { padding: calc(16px + env(safe-area-inset-top)) 20px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f0f0f3; }
+  .top img { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; }
+  .top .t { font-weight: 700; font-size: 18px; }
+  .top .who { margin-left: auto; color: #8a8a8e; font-size: 13px; }
+  .list { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+  .card { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid #ececf0; border-radius: 18px; background: #fff; box-shadow: 0 2px 10px #0000000a; cursor: pointer; }
+  .card:active { background: #f6f6f8; }
+  .card img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; background: #eee; }
+  .card .info { flex: 1; }
+  .card .name { font-weight: 700; font-size: 17px; }
+  .card .act { color: #0a84ff; font-size: 14px; margin-top: 2px; }
+  .card .ic { font-size: 24px; }
+
+  /* Call */
+  #call { background: #0b0b0d; color: #fff; }
+  #remoteVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #0b0b0d; }
+  .callLogo { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; z-index: 1; }
+  .callLogo img { width: 120px; height: 120px; border-radius: 30px; object-fit: cover; }
+  #localVideo { position: absolute; top: calc(14px + env(safe-area-inset-top)); right: 14px; width: 104px; height: 150px; object-fit: cover; border-radius: 14px; border: 2px solid #ffffff44; background: #222; z-index: 4; }
+  .cHead { position: absolute; top: calc(20px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center; z-index: 3; }
+  .cHead .n { font-size: 22px; font-weight: 700; }
+  .cHead .s { font-size: 14px; color: #c7c7cc; margin-top: 4px; }
+  .bar { position: absolute; bottom: 0; left: 0; right: 0; z-index: 5; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; padding: 22px 18px calc(26px + env(safe-area-inset-bottom)); }
+  .rb { width: 62px; height: 62px; border-radius: 50%; border: 0; font-size: 24px; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .rb.g { background: #2c2c2e; }
+  .rb.active { background: #fff; color: #111; }
+  .rb.answer { background: #34c759; }
+  .rb.end { background: #ff3b30; }
+  .rb:active { transform: scale(.94); }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
-<div id="app">
 
-  <!-- START SCREEN -->
-  <div class="start" id="startScreen">
-    <div class="logo">Techu</div>
-    <div class="tag">Audio &amp; video calling</div>
-    <div class="field">
-      <input id="roomInput" placeholder="Room code (e.g. 1234)" autocomplete="off" autocapitalize="off" spellcheck="false">
-    </div>
-    <div class="btns">
-      <button class="btn btn-primary" id="createBtn">Create call</button>
-      <button class="btn btn-ghost" id="joinBtn">Join call</button>
-    </div>
-    <div class="status" id="status"></div>
-    <div class="hint">Ek phone par <b>Create call</b> dabao, dusre par same code daal kar <b>Join call</b>. Dono ko camera &amp; mic allow karna hoga.</div>
+<!-- LOGIN -->
+<div class="screen active" id="login">
+  <img class="logo-img" src="Bakwaas.jpeg" alt="logo" onerror="this.style.display='none'">
+  <div class="brand">Techu</div>
+  <div class="sub">Sign in to continue</div>
+  <div class="form">
+    <input id="caseId" placeholder="Case ID" inputmode="numeric" autocomplete="off" autocapitalize="off">
+    <input id="pass" type="password" placeholder="Password" autocomplete="off">
+    <div class="err" id="loginErr"></div>
+    <button class="primary" id="loginBtn">Login</button>
   </div>
+</div>
 
-  <!-- CALL SCREEN -->
-  <div class="call" id="callScreen">
-    <video id="remoteVideo" autoplay playsinline></video>
-    <video id="localVideo" autoplay playsinline muted></video>
-    <div class="codeTag" id="codeTag"></div>
-    <div class="waiting" id="waiting">Dusre ke judने ka intezaar...</div>
-    <div class="bar">
-      <button class="round on" id="micBtn" title="Mic">🎤</button>
-      <button class="round on" id="camBtn" title="Camera">📹</button>
-      <button class="round end" id="endBtn" title="End">📞</button>
+<!-- DASHBOARD -->
+<div class="screen" id="dash">
+  <div class="top">
+    <img src="Bakwaas.jpeg" onerror="this.style.display='none'">
+    <div class="t">Techu</div>
+    <div class="who" id="whoAmI"></div>
+  </div>
+  <div class="list">
+    <div class="card" id="cardAudio">
+      <img src="Bakwaas.jpeg" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22/>'">
+      <div class="info"><div class="name">Support</div><div class="act">Audio call</div></div>
+      <div class="ic">🎙️</div>
+    </div>
+    <div class="card" id="cardVideo">
+      <img src="Bakwaas.jpeg" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22/>'">
+      <div class="info"><div class="name">Support</div><div class="act">Video call</div></div>
+      <div class="ic">📹</div>
     </div>
   </div>
+</div>
 
+<!-- CALL -->
+<div class="screen" id="call">
+  <video id="remoteVideo" autoplay playsinline></video>
+  <div class="callLogo" id="callLogo"><img src="Bakwaas.jpeg" onerror="this.style.display='none'"></div>
+  <video id="localVideo" autoplay playsinline muted class="hidden"></video>
+  <div class="cHead">
+    <div class="n" id="peerName">Support</div>
+    <div class="s" id="callStat">Calling…</div>
+  </div>
+  <div class="bar">
+    <button class="rb g active" id="btnMute" title="Mute">🎤</button>
+    <button class="rb g active" id="btnSpk" title="Speaker">🔊</button>
+    <button class="rb answer hidden" id="btnAnswer" title="Answer">📞</button>
+    <button class="rb end" id="btnEnd" title="Hang up">📴</button>
+  </div>
 </div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -83,121 +121,133 @@
 (function () {
   "use strict";
 
-  var ICE = {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-      { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-      { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
-      { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
-    ]
-  };
+  var IS_ADMIN = false;
+  var PREFIX = "techu2v1-";
+  var ADMIN_ID = PREFIX + "admin";
+  var VALID = { "556221": true, "997204": true };
+  var PASSWORD = "6macs0";
+
+  var ICE = { iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+  ]};
 
   var $ = function (id) { return document.getElementById(id); };
-  var peer = null, localStream = null, currentCall = null;
+  function show(id) { ["login","dash","call"].forEach(function (s) { var el=$(s); if(el) el.classList.toggle("active", s===id); }); var a=$(id); if(a){ a.classList.remove("fade-in"); void a.offsetWidth; a.classList.add("fade-in"); } }
 
-  function setStatus(t) { $("status").textContent = t || ""; }
-  function hostId(code) { return "techu-" + code + "-host"; }
-  function guestId(code) { return "techu-" + code + "-guest"; }
+  var peer = null, myCaseId = null, localStream = null, currentCall = null, incomingCall = null, wantVideo = false;
 
-  function showCall(code) {
-    $("startScreen").style.display = "none";
-    $("callScreen").style.display = "block";
-    $("codeTag").textContent = "Room: " + code;
-  }
+  function myId() { return PREFIX + "user-" + myCaseId; }
 
-  async function getMedia() {
-    return navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }
+  function initPeer() {
+    peer = new Peer(myId(), { config: ICE, debug: 1 });
+    peer.on("error", function (e) { console.log("peer error", e); });
+    peer.on("call", function (c) {
+      incomingCall = c;
+      wantVideo = !!(c.metadata && c.metadata.video);
+      openCall("Support", wantVideo, true);
+      $("callStat").textContent = (wantVideo ? "Incoming video call…" : "Incoming audio call…");
+      $("btnAnswer").classList.remove("hidden");
     });
   }
 
-  function attachRemote(stream) {
-    $("remoteVideo").srcObject = stream;
-    $("waiting").style.display = "none";
+  async function getMedia(video) {
+    return navigator.mediaDevices.getUserMedia({ audio: true, video: video ? { facingMode: "user" } : false });
   }
 
-  function wireCall(call) {
+  function openCall(name, video, incoming) {
+    $("peerName").textContent = name;
+    show("call");
+    $("localVideo").classList.toggle("hidden", !video);
+    $("callLogo").classList.toggle("hidden", video);
+    $("remoteVideo").classList.toggle("hidden", false);
+    if (!incoming) $("btnAnswer").classList.add("hidden");
+  }
+
+  function wire(call) {
     currentCall = call;
-    call.on("stream", attachRemote);
-    call.on("close", function () { $("waiting").style.display = "flex"; $("waiting").textContent = "Call ended"; });
-    call.on("error", function (e) { setStatus("Call error: " + e); });
+    call.on("stream", function (remote) {
+      $("remoteVideo").srcObject = remote;
+      var hasVideo = remote.getVideoTracks().length > 0;
+      $("callLogo").classList.toggle("hidden", hasVideo);
+      $("callStat").textContent = "Connected";
+    });
+    call.on("close", endUI);
+    call.on("error", function () { $("callStat").textContent = "Call error"; });
   }
 
-  async function start(asHost, code) {
-    setStatus("Camera/mic allow karo...");
-    try { localStream = await getMedia(); }
-    catch (e) { setStatus("Camera/mic permission chahiye. Safari me allow karo."); return; }
-
+  async function startCall(video) {
+    wantVideo = video;
+    try { localStream = await getMedia(video); }
+    catch (e) { alert("Camera/mic allow karo (Safari settings)."); return; }
     $("localVideo").srcObject = localStream;
-    var myId = asHost ? hostId(code) : guestId(code);
-
-    peer = new Peer(myId, { config: ICE, debug: 1 });
-
-    peer.on("open", function () {
-      showCall(code);
-      if (asHost) {
-        $("waiting").textContent = "Dusre ke judने ka intezaar...";
-      } else {
-        // guest calls host
-        var call = peer.call(hostId(code), localStream);
-        wireCall(call);
-        $("waiting").textContent = "Connect ho raha hai...";
-      }
-    });
-
-    // host receives the call
-    peer.on("call", function (call) {
-      call.answer(localStream);
-      wireCall(call);
-    });
-
-    peer.on("error", function (err) {
-      if (String(err).indexOf("unavailable-id") > -1) {
-        setStatus("Ye code pehle se use me hai. Dusra code try karo ya Join dabao.");
-      } else if (String(err).indexOf("peer-unavailable") > -1) {
-        setStatus("Host nahi mila. Pehle dusre phone par 'Create call' dabao.");
-        $("waiting").textContent = "Host offline hai";
-      } else {
-        setStatus("Error: " + err);
-      }
-    });
+    openCall("Support", video, false);
+    $("callStat").textContent = "Calling…";
+    var call = peer.call(ADMIN_ID, localStream, { metadata: { video: video } });
+    wire(call);
   }
 
-  $("createBtn").onclick = function () {
-    var code = ($("roomInput").value || "").trim();
-    if (!code) { setStatus("Pehle room code daalo."); return; }
-    start(true, code);
-  };
-  $("joinBtn").onclick = function () {
-    var code = ($("roomInput").value || "").trim();
-    if (!code) { setStatus("Pehle room code daalo."); return; }
-    start(false, code);
-  };
+  async function answer() {
+    if (!incomingCall) return;
+    try { localStream = await getMedia(wantVideo); }
+    catch (e) { alert("Camera/mic allow karo."); return; }
+    $("localVideo").srcObject = localStream;
+    $("localVideo").classList.toggle("hidden", !wantVideo);
+    $("callLogo").classList.toggle("hidden", wantVideo);
+    incomingCall.answer(localStream);
+    wire(incomingCall);
+    $("btnAnswer").classList.add("hidden");
+    $("callStat").textContent = "Connected";
+    incomingCall = null;
+  }
 
-  // controls
-  var micOn = true, camOn = true;
-  $("micBtn").onclick = function () {
+  function endUI() {
+    if (currentCall) { try { currentCall.close(); } catch (e) {} currentCall = null; }
+    if (localStream) { localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; }
+    $("remoteVideo").srcObject = null;
+    show("dash");
+  }
+
+  // ---- Login ----
+  $("loginBtn").onclick = function () {
+    var id = ($("caseId").value || "").trim();
+    var pw = ($("pass").value || "");
+    if (!VALID[id] || pw !== PASSWORD) { $("loginErr").textContent = "Galat Case ID ya password."; return; }
+    $("loginErr").textContent = "";
+    myCaseId = id;
+    $("whoAmI").textContent = "ID: " + id;
+    initPeer();
+    show("dash");
+  };
+  $("pass").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
+
+  // ---- Dashboard ----
+  $("cardAudio").onclick = function () { startCall(false); };
+  $("cardVideo").onclick = function () { startCall(true); };
+
+  // ---- Call controls ----
+  var micOn = true, spkOn = true;
+  $("btnMute").onclick = function () {
     if (!localStream) return;
     micOn = !micOn;
     localStream.getAudioTracks().forEach(function (t) { t.enabled = micOn; });
-    this.className = "round " + (micOn ? "on" : "off");
+    this.className = "rb g " + (micOn ? "active" : "");
     this.textContent = micOn ? "🎤" : "🔇";
   };
-  $("camBtn").onclick = function () {
-    if (!localStream) return;
-    camOn = !camOn;
-    localStream.getVideoTracks().forEach(function (t) { t.enabled = camOn; });
-    this.className = "round " + (camOn ? "on" : "off");
-    this.textContent = camOn ? "📹" : "🚫";
+  $("btnSpk").onclick = function () {
+    spkOn = !spkOn;
+    var rv = $("remoteVideo");
+    rv.volume = spkOn ? 1 : 0.25;
+    if (rv.setSinkId) { rv.setSinkId(spkOn ? "default" : "default").catch(function(){}); }
+    this.className = "rb g " + (spkOn ? "active" : "");
+    this.textContent = spkOn ? "🔊" : "🔈";
   };
-  $("endBtn").onclick = function () {
-    if (currentCall) currentCall.close();
-    if (peer) peer.destroy();
-    if (localStream) localStream.getTracks().forEach(function (t) { t.stop(); });
-    location.reload();
-  };
+  $("btnAnswer").onclick = answer;
+  $("btnEnd").onclick = endUI;
+
 })();
 </script>
 </body>
