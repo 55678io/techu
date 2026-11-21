@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Techu</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #0b141a; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; color: #e9edef; overflow: hidden; }
+  #app { height: 100%; display: flex; flex-direction: column; }
+
+  /* ---- Start screen ---- */
+  .start { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+  .logo { font-size: 44px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; color: #25d366; }
+  .tag { color: #8696a0; margin-bottom: 36px; font-size: 15px; }
+  .field { width: 100%; max-width: 340px; }
+  .field input {
+    width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #2a3942;
+    background: #202c33; color: #e9edef; font-size: 18px; text-align: center; letter-spacing: 1px;
+  }
+  .btns { width: 100%; max-width: 340px; margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .btn { padding: 16px; border: 0; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #25d366; color: #0b141a; }
+  .btn-ghost { background: #202c33; color: #e9edef; border: 1px solid #2a3942; }
+  .hint { color: #8696a0; font-size: 13px; margin-top: 22px; max-width: 320px; line-height: 1.5; }
+  .status { color: #f0b429; font-size: 14px; margin-top: 16px; min-height: 20px; }
+
+  /* ---- Call screen ---- */
+  .call { flex: 1; position: relative; display: none; background: #000; }
+  #remoteVideo { width: 100%; height: 100%; object-fit: cover; background: #000; }
+  #localVideo {
+    position: absolute; top: 16px; right: 16px; width: 110px; height: 160px;
+    object-fit: cover; border-radius: 12px; border: 2px solid #ffffff33; background: #111; z-index: 5;
+  }
+  .waiting { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #8696a0; font-size: 16px; z-index: 2; text-align: center; padding: 20px; }
+  .bar {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
+    display: flex; justify-content: center; gap: 18px; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, #000a, transparent);
+  }
+  .round { width: 58px; height: 58px; border-radius: 50%; border: 0; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .round.on { background: #202c33; }
+  .round.off { background: #f1f1f1; color: #111; }
+  .round.end { background: #ea0038; }
+  .codeTag { position: absolute; top: 16px; left: 16px; z-index: 5; background: #000000aa; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #e9edef; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START SCREEN -->
+  <div class="start" id="startScreen">
+    <div class="logo">Techu</div>
+    <div class="tag">Audio &amp; video calling</div>
+    <div class="field">
+      <input id="roomInput" placeholder="Room code (e.g. 1234)" autocomplete="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="btns">
+      <button class="btn btn-primary" id="createBtn">Create call</button>
+      <button class="btn btn-ghost" id="joinBtn">Join call</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="hint">Ek phone par <b>Create call</b> dabao, dusre par same code daal kar <b>Join call</b>. Dono ko camera &amp; mic allow karna hoga.</div>
+  </div>
+
+  <!-- CALL SCREEN -->
+  <div class="call" id="callScreen">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay playsinline muted></video>
+    <div class="codeTag" id="codeTag"></div>
+    <div class="waiting" id="waiting">Dusre ke judने ka intezaar...</div>
+    <div class="bar">
+      <button class="round on" id="micBtn" title="Mic">🎤</button>
+      <button class="round on" id="camBtn" title="Camera">📹</button>
+      <button class="round end" id="endBtn" title="End">📞</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ICE = {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+      { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+      { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+    ]
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var peer = null, localStream = null, currentCall = null;
+
+  function setStatus(t) { $("status").textContent = t || ""; }
+  function hostId(code) { return "techu-" + code + "-host"; }
+  function guestId(code) { return "techu-" + code + "-guest"; }
+
+  function showCall(code) {
+    $("startScreen").style.display = "none";
+    $("callScreen").style.display = "block";
+    $("codeTag").textContent = "Room: " + code;
+  }
+
+  async function getMedia() {
+    return navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+  }
+
+  function attachRemote(stream) {
+    $("remoteVideo").srcObject = stream;
+    $("waiting").style.display = "none";
+  }
+
+  function wireCall(call) {
+    currentCall = call;
+    call.on("stream", attachRemote);
+    call.on("close", function () { $("waiting").style.display = "flex"; $("waiting").textContent = "Call ended"; });
+    call.on("error", function (e) { setStatus("Call error: " + e); });
+  }
+
+  async function start(asHost, code) {
+    setStatus("Camera/mic allow karo...");
+    try { localStream = await getMedia(); }
+    catch (e) { setStatus("Camera/mic permission chahiye. Safari me allow karo."); return; }
+
+    $("localVideo").srcObject = localStream;
+    var myId = asHost ? hostId(code) : guestId(code);
+
+    peer = new Peer(myId, { config: ICE, debug: 1 });
+
+    peer.on("open", function () {
+      showCall(code);
+      if (asHost) {
+        $("waiting").textContent = "Dusre ke judने ka intezaar...";
+      } else {
+        // guest calls host
+        var call = peer.call(hostId(code), localStream);
+        wireCall(call);
+        $("waiting").textContent = "Connect ho raha hai...";
+      }
+    });
+
+    // host receives the call
+    peer.on("call", function (call) {
+      call.answer(localStream);
+      wireCall(call);
+    });
+
+    peer.on("error", function (err) {
+      if (String(err).indexOf("unavailable-id") > -1) {
+        setStatus("Ye code pehle se use me hai. Dusra code try karo ya Join dabao.");
+      } else if (String(err).indexOf("peer-unavailable") > -1) {
+        setStatus("Host nahi mila. Pehle dusre phone par 'Create call' dabao.");
+        $("waiting").textContent = "Host offline hai";
+      } else {
+        setStatus("Error: " + err);
+      }
+    });
+  }
+
+  $("createBtn").onclick = function () {
+    var code = ($("roomInput").value || "").trim();
+    if (!code) { setStatus("Pehle room code daalo."); return; }
+    start(true, code);
+  };
+  $("joinBtn").onclick = function () {
+    var code = ($("roomInput").value || "").trim();
+    if (!code) { setStatus("Pehle room code daalo."); return; }
+    start(false, code);
+  };
+
+  // controls
+  var micOn = true, camOn = true;
+  $("micBtn").onclick = function () {
+    if (!localStream) return;
+    micOn = !micOn;
+    localStream.getAudioTracks().forEach(function (t) { t.enabled = micOn; });
+    this.className = "round " + (micOn ? "on" : "off");
+    this.textContent = micOn ? "🎤" : "🔇";
+  };
+  $("camBtn").onclick = function () {
+    if (!localStream) return;
+    camOn = !camOn;
+    localStream.getVideoTracks().forEach(function (t) { t.enabled = camOn; });
+    this.className = "round " + (camOn ? "on" : "off");
+    this.textContent = camOn ? "📹" : "🚫";
+  };
+  $("endBtn").onclick = function () {
+    if (currentCall) currentCall.close();
+    if (peer) peer.destroy();
+    if (localStream) localStream.getTracks().forEach(function (t) { t.stop(); });
+    location.reload();
+  };
+})();
+</script>
+</body>
+</html>
